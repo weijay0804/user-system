@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+
+  mysql_db:
+
+    image: mysql:latest
+    restart: always
+    volumes:
+      - ./db_volumes/mysql:/var/lib/mysql/
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+    # 讓容器可以互相溝通
+    # 在 Linux 才需要這個設定
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
