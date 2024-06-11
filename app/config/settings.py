@@ -31,6 +31,9 @@ class Settings(BaseSettings):
         % quote_plus(MYSQL_PASSWORD)
     )
 
+    # Testing config
+    TEST_DB_URI: str = "sqlite://"
+
 
 @lru_cache
 def get_settings() -> Settings:
