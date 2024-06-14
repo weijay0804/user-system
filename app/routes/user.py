@@ -17,7 +17,7 @@ def register_user(
 
     user_services.create_user_account(data, session)
 
-    return JSONResponse({"message": "Account has been created."})
+    return JSONResponse({"message": "Account has been created."}, status_code=201)
 
 
 @user_router.post("/verify", status_code=status.HTTP_200_OK)
