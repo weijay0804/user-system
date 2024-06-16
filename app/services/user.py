@@ -1,13 +1,16 @@
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import security
 from app.crud import user_crud
 from app.models.user import User
 from app.schemas import db_schemas, request_schemas
+from app.services.email import send_account_verification_email
 
 
-def create_user_account(data: request_schemas.UserCreateAccountResp, session: Session) -> User:
+async def create_user_account(
+    data: request_schemas.UserCreateAccountResp, session: Session, backgroundtasks: BackgroundTasks
+) -> User:
 
     user_exist = user_crud.get_by_email(session, email=data.email)
 
@@ -18,5 +21,7 @@ def create_user_account(data: request_schemas.UserCreateAccountResp, session: Se
     obj_in = db_schemas.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
 
     user = user_crud.create(session, obj_in=obj_in)
+
+    await send_account_verification_email(user=user, background_tasks=backgroundtasks)
 
     return user

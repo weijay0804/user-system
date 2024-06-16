@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     # Testing config
     TEST_DB_URI: str = "sqlite://"
 
+    # Email Context
+    USER_VERIFY_ACCOUNT_EMAIL_CONTEXT: str = os.environ.get(
+        "USER_VERIFY_ACCOUNT_EMAIL_CONTEXT", "verify-account"
+    )
+    USER_FORGOT_PASSWORD_EMAIL_CONTEXT: str = os.environ.get(
+        "USER_FORGOT_PASSWORD_EMAIL_CONTEXT", "password-reset"
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

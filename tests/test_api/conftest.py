@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.config.database import Base
+from app.config.email import fm
 from app.config.settings import get_settings
 from app.deps import get_session
 from app.main import create_app
@@ -56,5 +57,6 @@ def client(test_app, test_session) -> TestClient:
             pass
 
     test_app.dependency_overrides[get_session] = _test_db
+    fm.config.SUPPRESS_SEND = 1
 
     return TestClient(app=test_app)
