@@ -17,3 +17,13 @@ services:
     # 在 Linux 才需要這個設定
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  smtp-service:
+    image: axllent/mailpit
+    restart: unless-stopped
+    container_name: smtp
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
