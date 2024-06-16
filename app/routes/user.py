@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -10,12 +10,14 @@ user_router = APIRouter(prefix="/users", tags=["Users"], responses={404: {"messa
 
 
 @user_router.post("", status_code=status.HTTP_201_CREATED)
-def register_user(
-    data: request_schemas.UserCreateAccountResp, session: Session = Depends(get_session)
+async def register_user(
+    data: request_schemas.UserCreateAccountResp,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
 ):
     """註冊使用者"""
 
-    user_services.create_user_account(data, session)
+    await user_services.create_user_account(data, session, backgroundtasks=background_tasks)
 
     return JSONResponse({"message": "Account has been created."}, status_code=201)
 
