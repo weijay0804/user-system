@@ -22,4 +22,10 @@ class User(Base):
     def get_context_string(self, context: str) -> str:
         """取得根據 `context` 和用戶的密碼、時間資訊組合的字串"""
 
-        return f"{context}{self.password[-6:]}{self.create_at.strftime('%Y%m%d%H%M%S')}".strip()
+        # 確保同樣的連結不能再使用第二次
+        # 如果之前沒有認證過 (update_at is None) 就用 create_time
+        if self.updated_at is None:
+
+            return f"{context}{self.password[-6:]}{self.create_at.strftime('%Y%m%d%H%M%S')}".strip()
+
+        return f"{context}{self.password[-6:]}{self.updated_at.strftime('%Y%m%d%H%M%S')}".strip()
