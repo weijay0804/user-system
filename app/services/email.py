@@ -44,3 +44,24 @@ async def send_account_verification_email(user: User, background_tasks: Backgrou
         context=data,
         background_tasks=background_tasks,
     )
+
+
+async def send_account_verifiaction_confirmation_email(
+    user: User, background_tasks: BackgroundTasks
+) -> None:
+    """在背景寄送帳戶認證成功提醒 email"""
+
+    data = {
+        "app_name": settings.APP_NAME,
+        "name": user.name,
+    }
+
+    subject = f"帳戶啟用成功 - {settings.APP_NAME}"
+
+    await send_email(
+        recipients=[user.email],
+        subject=subject,
+        template_name="users/account-verification-confirmation.html",
+        context=data,
+        background_tasks=background_tasks,
+    )

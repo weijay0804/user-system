@@ -10,7 +10,10 @@ from app.crud import user_crud
 from app.models.user import User
 from app.schemas import db_schemas, request_schemas
 from app.security import verify_password
-from app.services.email import send_account_verification_email
+from app.services.email import (
+    send_account_verifiaction_confirmation_email,
+    send_account_verification_email,
+)
 
 settings = get_settings()
 
@@ -34,7 +37,9 @@ async def create_user_account(
     return user
 
 
-def activate_user_account(data: request_schemas.UserVerifiyAccountReq, session: Session) -> None:
+async def activate_user_account(
+    data: request_schemas.UserVerifiyAccountReq, session: Session, backgroundtasks: BackgroundTasks
+) -> None:
 
     user = user_crud.get_by_email(session, email=data.email)
 
@@ -60,4 +65,4 @@ def activate_user_account(data: request_schemas.UserVerifiyAccountReq, session: 
     session.add(user)
     session.commit()
 
-    # TODO 寄送認證成功信件
+    await send_account_verifiaction_confirmation_email(user, backgroundtasks)
