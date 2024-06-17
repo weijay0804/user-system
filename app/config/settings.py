@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import List
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
@@ -16,8 +17,15 @@ class Settings(BaseSettings):
     APP_NAME: str = os.environ.get("APP_NAME", "User System")
     APP_ENV: str = os.environ.get("APP_ENV", "dev")
 
+    # CORS
+    ALLOW_ORIGINS: str = os.environ.get("ALLOW_ORIGINS", "")
+    ALLOW_ORIGINS_LIST: List[str] = ALLOW_ORIGINS.strip().replace(" ", "").split(",")
+
     # Frontend
-    FRONTEND_HOST: str = os.environ.get("FRONTEND_HOST", "http://127.0.0.1:3000")
+    FRONTEND_HOST: str = os.environ.get("FRONTEND_HOST", "http://127.0.0.1:5500")
+    FRONTEND_ACTIVE_ACCOUNT_URL: str = os.environ.get(
+        "FRONTEND_ACTIVE_ACCOUNT_URL", "/auth/account-verifiy"
+    )
 
     # MySQL
     MYSQL_HOST: str = os.environ.get("MYSQL_HOST", "localhost")
@@ -34,6 +42,7 @@ class Settings(BaseSettings):
     # Testing config
     TEST_DB_URI: str = "sqlite://"
 
+    # Email config
     # Email Context
     USER_VERIFY_ACCOUNT_EMAIL_CONTEXT: str = os.environ.get(
         "USER_VERIFY_ACCOUNT_EMAIL_CONTEXT", "verify-account"

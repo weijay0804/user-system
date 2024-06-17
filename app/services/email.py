@@ -31,7 +31,7 @@ async def send_account_verification_email(user: User, background_tasks: Backgrou
 
     token = hash_password(context_string)
 
-    active_url = f"{settings.FRONTEND_HOST}/auth/account-verify?token={token}&email={user.email}"
+    active_url = f"{settings.FRONTEND_HOST}{settings.FRONTEND_ACTIVE_ACCOUNT_URL}?token={token}&email={user.email}"
 
     data = {"app_name": settings.APP_NAME, "name": user.name, "activate_url": active_url}
 
