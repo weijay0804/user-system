@@ -22,7 +22,14 @@ async def register_user(
     return JSONResponse({"message": "Account has been created."}, status_code=201)
 
 
-@user_router.post("/verify", status_code=status.HTTP_200_OK)
-def verify_user_account(data):
+@user_router.post("/verifiy", status_code=status.HTTP_200_OK)
+async def verify_user_account(
+    data: request_schemas.UserVerifiyAccountReq,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
     """認證使用者"""
-    pass
+
+    await user_services.activate_user_account(data, session, background_tasks)
+
+    return JSONResponse({"message": "Account has been verified."})

@@ -31,7 +31,7 @@ async def send_account_verification_email(user: User, background_tasks: Backgrou
 
     token = hash_password(context_string)
 
-    active_url = f"{settings.FRONTEND_HOST}/auth/account-verify?token={token}&email={user.email}"
+    active_url = f"{settings.FRONTEND_HOST}{settings.FRONTEND_ACTIVE_ACCOUNT_URL}?token={token}&email={user.email}"
 
     data = {"app_name": settings.APP_NAME, "name": user.name, "activate_url": active_url}
 
@@ -41,6 +41,27 @@ async def send_account_verification_email(user: User, background_tasks: Backgrou
         recipients=[user.email],
         subject=subject,
         template_name="users/account-verification.html",
+        context=data,
+        background_tasks=background_tasks,
+    )
+
+
+async def send_account_verifiaction_confirmation_email(
+    user: User, background_tasks: BackgroundTasks
+) -> None:
+    """在背景寄送帳戶認證成功提醒 email"""
+
+    data = {
+        "app_name": settings.APP_NAME,
+        "name": user.name,
+    }
+
+    subject = f"帳戶啟用成功 - {settings.APP_NAME}"
+
+    await send_email(
+        recipients=[user.email],
+        subject=subject,
+        template_name="users/account-verification-confirmation.html",
         context=data,
         background_tasks=background_tasks,
     )
