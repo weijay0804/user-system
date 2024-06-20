@@ -24,13 +24,13 @@ class UserDBUpdate(BaseModel):
 class UserTokenDBCreate(BaseModel):
 
     user_id: int
-    access_token: str
-    refresh_token: str
+    access_key: str
+    refresh_key: str
     expires_at: datetime
 
 
 class UserTokenDBUpdate(BaseModel):
 
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
+    access_key: Optional[str] = None
+    refresh_key: Optional[str] = None
     expires_at: Optional[str] = None
