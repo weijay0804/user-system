@@ -13,6 +13,17 @@ def test_fetch_user(client, user, test_session):
     assert response.json().get("password") is None
 
 
+def test_fetch_user_with_refresh_token(client, user, test_session):
+
+    data = _generate_token(user, test_session)
+
+    header = {"Authorization": f"Bearer {data.refresh_token}"}
+
+    response = client.get("/users/me", headers=header)
+
+    assert response.status_code == 401
+
+
 def test_fetch_user_with_invalid_token(client, user, test_session):
 
     data = _generate_token(user, test_session)
