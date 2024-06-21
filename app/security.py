@@ -1,6 +1,8 @@
 import base64
+import logging
 import secrets
 from datetime import datetime, timedelta
+from typing import Dict
 
 import jwt
 from passlib.context import CryptContext
@@ -43,3 +45,15 @@ def str_encode(string: str) -> str:
 def str_decode(string: str) -> str:
 
     return base64.b85decode(string.encode("ascii")).decode("ascii")
+
+
+def get_token_payload(token: str, secret: str, alog: str) -> Dict[str, str]:
+
+    try:
+        payload = jwt.decode(token, secret, alog)
+
+    except Exception as jwt_exec:
+        logging.debug(f"JWT Error: {str(jwt_exec)}")
+        payload = None
+
+    return payload
