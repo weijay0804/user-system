@@ -10,7 +10,14 @@ from app.config.settings import get_settings
 from app.crud import user_crud, user_token_crud
 from app.models.user import User
 from app.schemas import db_schemas, request_schemas, response_schemas
-from app.security import generate_token, get_unique_string, str_encode, verify_password
+from app.security import (
+    generate_token,
+    get_token_payload,
+    get_unique_string,
+    str_decode,
+    str_encode,
+    verify_password,
+)
 from app.services.email import (
     send_account_verifiaction_confirmation_email,
     send_account_verification_email,
@@ -82,7 +89,14 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
         expires_at=datetime.now() + rt_expires,
     )
 
-    user_token = user_token_crud.create(session, obj_in=user_token_in)
+    # 讓 user 和 token 是一對一的關係
+    # 這邊採取更新原有的 token 而不是再建立一筆新的 token
+    # 為了防止如果用戶重新登入，而舊的那個 access token 還可以繼續使用
+    if user.token:
+        user_token = user_token_crud.update(session, db_obj=user.token, obj_in=user_token_in)
+
+    else:
+        user_token = user_token_crud.create(session, obj_in=user_token_in)
 
     at_payload = {
         "sub": str_encode(str(user.id)),
