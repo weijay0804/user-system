@@ -3,12 +3,18 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.deps import get_session
+from app.deps import get_current_user, get_session, oauth2_scheme
+from app.models.user import User
 from app.schemas import request_schemas, response_schemas
 from app.services import user as user_services
 
 user_router = APIRouter(prefix="/users", tags=["Users"], responses={404: {"message": "Not found."}})
 guest_router = APIRouter(prefix="/auth", tags=["Auth"], responses={404: {"message": "Not found."}})
+auth_router = APIRouter(
+    prefix="/users",
+    tags=["Users"],
+    responses={404: {"message": "Not found."}},
+)
 
 
 @user_router.post("", status_code=status.HTTP_201_CREATED)
@@ -43,3 +49,9 @@ def user_login(
 ):
 
     return user_services.get_login_token(data, session)
+
+
+@auth_router.get("/me", response_model=response_schemas.FetchUserResp)
+def fetch_user(user: User = Depends(get_current_user)):
+
+    return user
