@@ -30,17 +30,22 @@ def get_token_user(token: str, session: Session) -> User:
 
     payload = get_token_payload(token, settings.JWT_SECRET, settings.JWT_ALGORITHM)
 
+    user = None
+
     if payload:
-        user_token_id = str_decode(payload.get("r"))
-        user_id = str_decode(payload.get("sub"))
-        access_key = payload.get("a")
 
-        user = user_token_crud.get_user(
-            session, token_id=user_token_id, access_key=access_key, user_id=user_id
-        )
+        # 防止傳入的 token 不是 access_token 而是 refresh_token 而造成錯誤
+        try:
+            user_token_id = str_decode(payload["r"])
+            user_id = str_decode(payload["sub"])
+            access_key = payload["a"]
 
-    else:
-        return None
+            user = user_token_crud.get_user(
+                session, token_id=user_token_id, access_key=access_key, user_id=user_id
+            )
+
+        except KeyError:
+            pass
 
     return user
 
