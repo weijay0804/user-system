@@ -20,7 +20,7 @@ class User(Base):
     updated_at = Column(DateTime, nullable=True, default=None, onupdate=datetime.now)
     create_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    tokens = relationship("UserToken", back_populates="user")
+    token = relationship("UserToken", back_populates="user", uselist=False)
 
     def get_context_string(self, context: str) -> str:
         """取得根據 `context` 和用戶的密碼、時間資訊組合的字串"""
@@ -40,10 +40,11 @@ class UserToken(Base):
     __tablename__ = "user_tokens"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = mapped_column(ForeignKey("users.id"))
+    user_id = mapped_column(ForeignKey("users.id"), unique=True)
     access_key = Column(String(255), nullable=True, index=True, default=None)
     refresh_key = Column(String(255), nullable=True, index=True, default=None)
     create_at = Column(DateTime, nullable=False, server_default=func.now())
-    expires_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime, nullable=False, comment="refrehs token expires time")
+    updated_at = Column(DateTime, nullable=True, default=None, onupdate=datetime.now())
 
-    user = relationship("User", back_populates="tokens")
+    user = relationship("User", back_populates="token")
