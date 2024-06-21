@@ -1,15 +1,16 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import BackgroundTasks, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app import security
 from app.config.settings import get_settings
-from app.crud import user_crud
+from app.crud import user_crud, user_token_crud
 from app.models.user import User
-from app.schemas import db_schemas, request_schemas
-from app.security import verify_password
+from app.schemas import db_schemas, request_schemas, response_schemas
+from app.security import generate_token, get_unique_string, str_encode, verify_password
 from app.services.email import (
     send_account_verifiaction_confirmation_email,
     send_account_verification_email,
@@ -66,3 +67,60 @@ async def activate_user_account(
     session.commit()
 
     await send_account_verifiaction_confirmation_email(user, backgroundtasks)
+
+
+def _generate_token(user: User, session: Session) -> response_schemas.JWTokenResp:
+
+    refresh_key = get_unique_string(100)
+    access_key = get_unique_string(50)
+    rt_expires = timedelta(minutes=settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES)
+
+    user_token_in = db_schemas.UserTokenDBCreate(
+        user_id=user.id,
+        access_key=access_key,
+        refresh_key=refresh_key,
+        expires_at=datetime.now() + rt_expires,
+    )
+
+    user_token = user_token_crud.create(session, obj_in=user_token_in)
+
+    at_payload = {
+        "sub": str_encode(str(user.id)),
+        "a": access_key,
+        "r": str_encode(str(user_token.id)),
+        "n": str_encode(user.name),
+    }
+
+    at_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = generate_token(
+        at_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, expiry=at_expires
+    )
+
+    rt_payload = {"sub": str_encode(str(user.id)), "t": refresh_key, "a": access_key}
+
+    refresh_token = generate_token(
+        rt_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, rt_expires
+    )
+
+    return response_schemas.JWTokenResp(
+        access_token=access_token, refresh_token=refresh_token, expires_at=at_expires.seconds
+    )
+
+
+def get_login_token(
+    data: OAuth2PasswordRequestForm, session: Session
+) -> response_schemas.JWTokenResp:
+
+    # 這邊的 username 等同於 email
+    user = user_crud.get_by_email(session, email=data.username)
+
+    if not user or not verify_password(data.password, user.password):
+        raise HTTPException(status_code=400, detail="Incorrect email or password.")
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Your account is not active.")
+
+    if not user.verified_at:
+        raise HTTPException(status_code=400, detail="Your account is not verified.")
+
+    return _generate_token(user, session)

@@ -41,8 +41,8 @@ class UserToken(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = mapped_column(ForeignKey("users.id"))
-    access_token = Column(String(255), nullable=True, index=True, default=None)
-    refresh_token = Column(String(255), nullable=True, index=True, default=None)
+    access_key = Column(String(255), nullable=True, index=True, default=None)
+    refresh_key = Column(String(255), nullable=True, index=True, default=None)
     create_at = Column(DateTime, nullable=False, server_default=func.now())
     expires_at = Column(DateTime, nullable=False)
 

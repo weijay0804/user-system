@@ -51,6 +51,14 @@ class Settings(BaseSettings):
         "USER_FORGOT_PASSWORD_EMAIL_CONTEXT", "password-reset"
     )
 
+    # JWT config
+    JWT_SECRET: str = os.environ.get("JWT_SECRET", "hard to guess")
+    JWT_ALGORITHM: str = os.environ.get("JWT_ALGORITHM", "HS256")
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 3))
+    JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = int(
+        os.environ.get("JWT_REFRESH_TOKEN_EXPIRE_MINUTES", 15)
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
