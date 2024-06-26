@@ -103,6 +103,7 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
         "a": access_key,
         "r": str_encode(str(user_token.id)),
         "n": str_encode(user.name),
+        "ty": str_encode("at"),
     }
 
     at_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -110,7 +111,12 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
         at_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, expiry=at_expires
     )
 
-    rt_payload = {"sub": str_encode(str(user.id)), "t": refresh_key, "a": access_key}
+    rt_payload = {
+        "sub": str_encode(str(user.id)),
+        "t": refresh_key,
+        "a": access_key,
+        "ty": str_encode("rt"),
+    }
 
     refresh_token = generate_token(
         rt_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, rt_expires
@@ -136,5 +142,43 @@ def get_login_token(
 
     if not user.verified_at:
         raise HTTPException(status_code=400, detail="Your account is not verified.")
+
+    return _generate_token(user, session)
+
+
+def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTokenResp:
+
+    token_payload = get_token_payload(refresh_token, settings.JWT_SECRET, settings.JWT_ALGORITHM)
+
+    if not token_payload:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
+
+    token_type = str_decode(token_payload.get("ty"))
+
+    if token_type != "rt":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
+
+    user_id = str_decode(token_payload.get("sub"))
+
+    user = user_crud.get(session, id=user_id)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
+
+    user_token = user.token
+
+    if not user_token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
+
+    rt_key = token_payload.get("t")
+    at_key = token_payload.get("a")
+
+    if rt_key != user_token.refresh_key or at_key != user_token.access_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
+
+    is_expires = user_token.expires_at < datetime.now()
+
+    if is_expires:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token has expired.")
 
     return _generate_token(user, session)

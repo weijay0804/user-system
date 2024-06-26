@@ -36,16 +36,21 @@ def get_token_user(token: str, session: Session) -> User:
 
         # 防止傳入的 token 不是 access_token 而是 refresh_token 而造成錯誤
         try:
-            user_token_id = str_decode(payload["r"])
-            user_id = str_decode(payload["sub"])
-            access_key = payload["a"]
-
-            user = user_token_crud.get_user(
-                session, token_id=user_token_id, access_key=access_key, user_id=user_id
-            )
+            token_type = str_decode(payload["ty"])
 
         except KeyError:
             pass
+
+        if token_type != "at":
+            raise HTTPException(status_code=401, detail="Not authorised.")
+
+        user_token_id = str_decode(payload["r"])
+        user_id = str_decode(payload["sub"])
+        access_key = payload["a"]
+
+        user = user_token_crud.get_user(
+            session, token_id=user_token_id, access_key=access_key, user_id=user_id
+        )
 
     return user
 

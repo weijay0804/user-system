@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -49,6 +49,12 @@ def user_login(
 ):
 
     return user_services.get_login_token(data, session)
+
+
+@guest_router.post("/refresh", response_model=response_schemas.JWTokenResp)
+def refresh_token(refresh_token=Header(), session: Session = Depends(get_session)):
+
+    return user_services.refresh_token(refresh_token, session)
 
 
 @auth_router.get("/me", response_model=response_schemas.FetchUserResp)
