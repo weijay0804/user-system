@@ -20,3 +20,9 @@ class UserResetPasswordReq(BaseModel):
 
 class UserForgotPasswordReq(BaseModel):
     email: str
+
+
+class UserForgotPasswordResetReq(BaseModel):
+    token: str
+    email: str
+    new_password: str
