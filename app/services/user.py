@@ -21,6 +21,7 @@ from app.security import (
 from app.services.email import (
     send_account_verifiaction_confirmation_email,
     send_account_verification_email,
+    send_forgot_password_reset_email,
     send_password_reset_email,
 )
 
@@ -197,3 +198,21 @@ async def reset_password(
     user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
     await send_password_reset_email(user, bakground_tasks)
+
+
+async def forgot_password(
+    data: request_schemas.UserForgotPasswordReq, session: Session, bakground_tasks: BackgroundTasks
+):
+
+    user = user_crud.get_by_email(session, email=data.email)
+
+    if user is None:
+        raise HTTPException(status_code=400, detail="Email is not exists.")
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Your account is not active.")
+
+    if not user.verified_at:
+        raise HTTPException(status_code=400, detail="Your account is not verified.")
+
+    await send_forgot_password_reset_email(user, bakground_tasks)

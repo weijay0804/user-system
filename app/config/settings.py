@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     FRONTEND_ACTIVE_ACCOUNT_URL: str = os.environ.get(
         "FRONTEND_ACTIVE_ACCOUNT_URL", "/auth/account-verifiy"
     )
+    FRONTEND_FORGOT_PASSWORD_RESET_URL: str = os.environ.get(
+        "FRONTEND_FORGOT_PASSWORD_RESET_URL", "/forgot-password-reset"
+    )
 
     # MySQL
     MYSQL_HOST: str = os.environ.get("MYSQL_HOST", "localhost")

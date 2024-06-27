@@ -1,1 +1,6 @@
-from .user import UserCreateAccountResp, UserResetPasswordReq, UserVerifiyAccountReq
+from .user import (
+    UserCreateAccountResp,
+    UserForgotPasswordReq,
+    UserResetPasswordReq,
+    UserVerifiyAccountReq,
+)
