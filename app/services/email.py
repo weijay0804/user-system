@@ -80,3 +80,23 @@ async def send_password_reset_email(user: User, background_tasks: BackgroundTask
         context=data,
         background_tasks=background_tasks,
     )
+
+
+async def send_forgot_password_reset_email(user: User, background_tasks: BackgroundTasks) -> None:
+
+    string_context = user.get_context_string(context=settings.USER_FORGOT_PASSWORD_EMAIL_CONTEXT)
+    token = hash_password(string_context)
+
+    reset_url = f"{settings.FRONTEND_HOST}{settings.FRONTEND_FORGOT_PASSWORD_RESET_URL}?token={token}&email={user.email}"
+
+    data = {"app_name": settings.APP_NAME, "name": user.name, "reset_url": reset_url}
+
+    subject = f"Password Reset - {settings.APP_NAME}"
+
+    await send_email(
+        recipients=[user.email],
+        subject=subject,
+        template_name="users/forgot-password-reset.html",
+        context=data,
+        background_tasks=background_tasks,
+    )

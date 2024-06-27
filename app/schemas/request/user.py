@@ -16,3 +16,13 @@ class UserVerifiyAccountReq(BaseModel):
 
 class UserResetPasswordReq(BaseModel):
     new_password: str
+
+
+class UserForgotPasswordReq(BaseModel):
+    email: str
+
+
+class UserForgotPasswordResetReq(BaseModel):
+    token: str
+    email: str
+    new_password: str

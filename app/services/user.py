@@ -21,6 +21,7 @@ from app.security import (
 from app.services.email import (
     send_account_verifiaction_confirmation_email,
     send_account_verification_email,
+    send_forgot_password_reset_email,
     send_password_reset_email,
 )
 
@@ -197,3 +198,57 @@ async def reset_password(
     user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
     await send_password_reset_email(user, bakground_tasks)
+
+
+async def forgot_password(
+    data: request_schemas.UserForgotPasswordReq, session: Session, bakground_tasks: BackgroundTasks
+):
+
+    user = user_crud.get_by_email(session, email=data.email)
+
+    if user is None:
+        raise HTTPException(status_code=400, detail="Email is not exists.")
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Your account is not active.")
+
+    if not user.verified_at:
+        raise HTTPException(status_code=400, detail="Your account is not verified.")
+
+    await send_forgot_password_reset_email(user, bakground_tasks)
+
+
+async def forgot_password_reset(
+    data: request_schemas.UserForgotPasswordResetReq,
+    background_tasks: BackgroundTasks,
+    session: Session,
+):
+
+    user = user_crud.get_by_email(session, email=data.email)
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Email is not exists.")
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Your account is not active.")
+
+    if not user.verified_at:
+        raise HTTPException(status_code=400, detail="Your account is not verified.")
+
+    user_token = user.get_context_string(settings.USER_FORGOT_PASSWORD_EMAIL_CONTEXT)
+
+    try:
+        token_valid = verify_password(user_token, data.token)
+
+    except Exception as verify_exec:
+        logging.exception(verify_exec)
+        token_valid = False
+
+    if not token_valid:
+        raise HTTPException(status_code=400, detail="This link is not valid.")
+
+    update_scheam = db_schemas.UserDBUpdate(password=security.hash_password(data.new_password))
+
+    user_crud.update(session, db_obj=user, obj_in=update_scheam)
+
+    await send_password_reset_email(user, background_tasks)

@@ -57,6 +57,30 @@ def refresh_token(refresh_token=Header(), session: Session = Depends(get_session
     return user_services.refresh_token(refresh_token, session)
 
 
+@guest_router.post("/forgot-password")
+async def forgot_password(
+    data: request_schemas.UserForgotPasswordReq,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
+
+    await user_services.forgot_password(data, session, background_tasks)
+
+    return JSONResponse({"message": "An reset password email has been sent."})
+
+
+@guest_router.put("/forgot-password/reset")
+async def forgot_password_reset(
+    data: request_schemas.UserForgotPasswordResetReq,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
+
+    await user_services.forgot_password_reset(data, background_tasks, session)
+
+    return JSONResponse({"message": "Password has been reset."})
+
+
 @auth_router.get("/me", response_model=response_schemas.FetchUserResp)
 def fetch_user(user: User = Depends(get_current_user)):
 
