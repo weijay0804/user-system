@@ -12,3 +12,7 @@ class UserVerifiyAccountReq(BaseModel):
 
     token: str
     email: str
+
+
+class UserResetPasswordReq(BaseModel):
+    new_password: str

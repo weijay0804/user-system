@@ -1,1 +1,1 @@
-from .user import UserCreateAccountResp, UserVerifiyAccountReq
+from .user import UserCreateAccountResp, UserResetPasswordReq, UserVerifiyAccountReq

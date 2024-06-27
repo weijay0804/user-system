@@ -21,6 +21,7 @@ from app.security import (
 from app.services.email import (
     send_account_verifiaction_confirmation_email,
     send_account_verification_email,
+    send_password_reset_email,
 )
 
 settings = get_settings()
@@ -182,3 +183,17 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTo
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token has expired.")
 
     return _generate_token(user, session)
+
+
+async def reset_password(
+    data: request_schemas.UserResetPasswordReq,
+    user: User,
+    session: Session,
+    bakground_tasks: BackgroundTasks,
+):
+
+    update_scheam = db_schemas.UserDBUpdate(password=security.hash_password(data.new_password))
+
+    user_crud.update(session, db_obj=user, obj_in=update_scheam)
+
+    await send_password_reset_email(user, bakground_tasks)
