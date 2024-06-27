@@ -61,3 +61,16 @@ def refresh_token(refresh_token=Header(), session: Session = Depends(get_session
 def fetch_user(user: User = Depends(get_current_user)):
 
     return user
+
+
+@auth_router.put("/reset-password")
+async def reset_password(
+    data: request_schemas.UserResetPasswordReq,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+
+    await user_services.reset_password(data, user, session, background_tasks)
+
+    return JSONResponse({"message": "Password has been reset."})

@@ -65,3 +65,18 @@ async def send_account_verifiaction_confirmation_email(
         context=data,
         background_tasks=background_tasks,
     )
+
+
+async def send_password_reset_email(user: User, background_tasks: BackgroundTasks) -> None:
+
+    data = {"app_name": settings.APP_NAME, "name": user.name}
+
+    subject = f"Password Reseted - {settings.APP_NAME}"
+
+    await send_email(
+        recipients=[user.email],
+        subject=subject,
+        template_name="users/password-reset.html",
+        context=data,
+        background_tasks=background_tasks,
+    )
