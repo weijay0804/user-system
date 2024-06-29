@@ -16,6 +16,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_session() -> Generator[Session, None, None]:
+    """取得 db session 實例"""
 
     session = SessionLocal()
 
@@ -27,6 +28,7 @@ def get_session() -> Generator[Session, None, None]:
 
 
 def get_token_user(token: str, session: Session) -> User:
+    """從 token 中取得使用者資訊"""
 
     payload = get_token_payload(token, settings.JWT_SECRET, settings.JWT_ALGORITHM)
 
@@ -58,6 +60,7 @@ def get_token_user(token: str, session: Session) -> User:
 def get_current_user(
     token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)
 ) -> User:
+    """從 token 中取得使用者資訊，並檢查 token 是否有效"""
 
     user = get_token_user(token, session)
 
