@@ -12,7 +12,9 @@ settings = get_settings()
 
 
 async def create_user_account(
-    data: request_schemas.UserCreateAccountResp, session: Session, backgroundtasks: BackgroundTasks
+    data: request_schemas.user.UserCreateAccountReq,
+    session: Session,
+    backgroundtasks: BackgroundTasks,
 ) -> User:
     """建立使用者帳戶，並發送認證帳戶的 email 至使用者信箱"""
 
@@ -32,7 +34,7 @@ async def create_user_account(
 
 
 async def reset_password(
-    data: request_schemas.UserResetPasswordReq,
+    data: request_schemas.user.UserResetPasswordReq,
     user: User,
     session: Session,
     bakground_tasks: BackgroundTasks,

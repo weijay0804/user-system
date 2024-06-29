@@ -16,7 +16,9 @@ settings = get_settings()
 
 
 async def activate_user_account(
-    data: request_schemas.UserVerifiyAccountReq, session: Session, backgroundtasks: BackgroundTasks
+    data: request_schemas.user.UserVerifiyAccountReq,
+    session: Session,
+    backgroundtasks: BackgroundTasks,
 ) -> None:
     """認證使用者帳號，並發送帳號已啟用 email 至使用者信箱"""
 
@@ -47,7 +49,7 @@ async def activate_user_account(
     await email_serv.send_account_verifiaction_confirmation_email(user, backgroundtasks)
 
 
-def _generate_token(user: User, session: Session) -> response_schemas.JWTokenResp:
+def _generate_token(user: User, session: Session) -> response_schemas.auth.JWTokenResp:
     """生成 JWT 並將 token 資料儲存至資料庫"""
 
     refresh_key = security.get_unique_string(100)
@@ -100,14 +102,14 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
         rt_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, rt_expires
     )
 
-    return response_schemas.JWTokenResp(
+    return response_schemas.auth.JWTokenResp(
         access_token=access_token, refresh_token=refresh_token, expires_at=at_expires.seconds
     )
 
 
 def get_login_token(
     data: OAuth2PasswordRequestForm, session: Session
-) -> response_schemas.JWTokenResp:
+) -> response_schemas.auth.JWTokenResp:
     """使用者登入，並回傳 JWT
 
     `data` 中的 `username` 等同於 `email`
@@ -129,7 +131,7 @@ def get_login_token(
     return _generate_token(user, session)
 
 
-def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTokenResp:
+def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth.JWTokenResp:
     """使用 refresh token 取得新的 access token"""
 
     token_payload = security.get_token_payload(
@@ -172,7 +174,9 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTo
 
 
 async def forgot_password(
-    data: request_schemas.UserForgotPasswordReq, session: Session, bakground_tasks: BackgroundTasks
+    data: request_schemas.user.UserForgotPasswordReq,
+    session: Session,
+    bakground_tasks: BackgroundTasks,
 ):
     """使用者忘記密碼的請求，會發送重新設定密碼的 email 至使用者信箱"""
 
@@ -191,7 +195,7 @@ async def forgot_password(
 
 
 async def forgot_password_reset(
-    data: request_schemas.UserForgotPasswordResetReq,
+    data: request_schemas.user.UserForgotPasswordResetReq,
     background_tasks: BackgroundTasks,
     session: Session,
 ):

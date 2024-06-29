@@ -12,7 +12,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"], responses={404: {"message
 
 @auth_router.post("/verifiy", status_code=status.HTTP_200_OK)
 async def verify_user_account(
-    data: request_schemas.UserVerifiyAccountReq,
+    data: request_schemas.user.UserVerifiyAccountReq,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ):
@@ -24,7 +24,7 @@ async def verify_user_account(
 
 
 @auth_router.post(
-    "/login", status_code=status.HTTP_200_OK, response_model=response_schemas.JWTokenResp
+    "/login", status_code=status.HTTP_200_OK, response_model=response_schemas.auth.JWTokenResp
 )
 def user_login(
     data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)
@@ -34,7 +34,7 @@ def user_login(
     return auth_serv.get_login_token(data, session)
 
 
-@auth_router.post("/token/refresh", response_model=response_schemas.JWTokenResp)
+@auth_router.post("/token/refresh", response_model=response_schemas.auth.JWTokenResp)
 def refresh_token(refresh_token=Header(), session: Session = Depends(get_session)):
     """使用 refresh token 取得新的 access token"""
 
@@ -43,7 +43,7 @@ def refresh_token(refresh_token=Header(), session: Session = Depends(get_session
 
 @auth_router.post("/forgot-password", status_code=status.HTTP_200_OK)
 async def forgot_password_request(
-    data: request_schemas.UserForgotPasswordReq,
+    data: request_schemas.user.UserForgotPasswordReq,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ):
@@ -56,7 +56,7 @@ async def forgot_password_request(
 
 @auth_router.put("/forgot-password/reset", status_code=status.HTTP_200_OK)
 async def forgot_password_reset(
-    data: request_schemas.UserForgotPasswordResetReq,
+    data: request_schemas.user.UserForgotPasswordResetReq,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ):

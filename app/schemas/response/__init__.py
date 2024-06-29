@@ -1,2 +1,1 @@
-from .auth import JWTokenResp
-from .user import FetchUserResp
+from . import auth, user

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 
 class UserDBCreate(BaseModel):
+    """建立使用者資料"""
 
     email: str
     name: str
@@ -12,6 +13,7 @@ class UserDBCreate(BaseModel):
 
 
 class UserDBUpdate(BaseModel):
+    """更新使用者資料"""
 
     email: Optional[str] = None
     name: Optional[str] = None
@@ -22,6 +24,7 @@ class UserDBUpdate(BaseModel):
 
 
 class UserTokenDBCreate(BaseModel):
+    """建立使用者 token 資料"""
 
     user_id: int
     access_key: str
@@ -30,6 +33,7 @@ class UserTokenDBCreate(BaseModel):
 
 
 class UserTokenDBUpdate(BaseModel):
+    """更新使用者 token 資料"""
 
     access_key: Optional[str] = None
     refresh_key: Optional[str] = None
