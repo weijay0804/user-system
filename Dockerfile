@@ -1,21 +1,14 @@
-FROM python:3.11
+FROM python:3.11-buster
 
-# set work directory
-WORKDIR /usr/srv
+RUN pip install poetry==1.4.2
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /backend
 
-RUN useradd -rm -d /code -s /bin/bash -g root -G sudo -u 1001 ubuntu
+COPY pyproject.toml poetry.lock ./
 
-# copy requirements file
-COPY ./requirements.txt /usr/srv/requirements.txt
+RUN poetry install --without dev
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+COPY app ./app
 
-USER ubuntu
 
-EXPOSE 8000
-
-CMD bash -c 'uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload'
+CMD ["poetry", "run", "uvicorn", "app.main:app", "--port", "8000"]
