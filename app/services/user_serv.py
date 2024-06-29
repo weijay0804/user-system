@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app import security
 from app.config.settings import get_settings
-from app.crud import user_crud
+from app.crud import crud_user
 from app.models.user import User
 from app.schemas import db_schemas, request_schemas
 from app.services import email_serv
@@ -16,7 +16,7 @@ async def create_user_account(
 ) -> User:
     """建立使用者帳戶，並發送認證帳戶的 email 至使用者信箱"""
 
-    user_exist = user_crud.get_by_email(session, email=data.email)
+    user_exist = crud_user.user_crud.get_by_email(session, email=data.email)
 
     if user_exist:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already exists.")
@@ -24,7 +24,7 @@ async def create_user_account(
     hashed_pwd = security.hash_string(data.password)
     obj_in = db_schemas.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
 
-    user = user_crud.create(session, obj_in=obj_in)
+    user = crud_user.user_crud.create(session, obj_in=obj_in)
 
     await email_serv.send_account_verification_email(user=user, background_tasks=backgroundtasks)
 
@@ -41,6 +41,6 @@ async def reset_password(
 
     update_scheam = db_schemas.UserDBUpdate(password=security.hash_string(data.new_password))
 
-    user_crud.update(session, db_obj=user, obj_in=update_scheam)
+    crud_user.user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
     await email_serv.send_password_reset_email(user, bakground_tasks)
