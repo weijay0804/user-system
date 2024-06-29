@@ -1,10 +1,10 @@
 from fastapi import BackgroundTasks
 from fastapi_mail import MessageSchema, MessageType
 
+from app import security
 from app.config.email import fm
 from app.config.settings import get_settings
 from app.models.user import User
-from app.security import hash_password
 
 settings = get_settings()
 
@@ -29,7 +29,7 @@ async def send_account_verification_email(user: User, background_tasks: Backgrou
 
     context_string = user.get_context_string(context=settings.USER_VERIFY_ACCOUNT_EMAIL_CONTEXT)
 
-    token = hash_password(context_string)
+    token = security.hash_string(context_string)
 
     active_url = f"{settings.FRONTEND_HOST}{settings.FRONTEND_ACTIVE_ACCOUNT_URL}?token={token}&email={user.email}"
 
@@ -85,7 +85,7 @@ async def send_password_reset_email(user: User, background_tasks: BackgroundTask
 async def send_forgot_password_reset_email(user: User, background_tasks: BackgroundTasks) -> None:
 
     string_context = user.get_context_string(context=settings.USER_FORGOT_PASSWORD_EMAIL_CONTEXT)
-    token = hash_password(string_context)
+    token = security.hash_string(string_context)
 
     reset_url = f"{settings.FRONTEND_HOST}{settings.FRONTEND_FORGOT_PASSWORD_RESET_URL}?token={token}&email={user.email}"
 
