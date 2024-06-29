@@ -8,7 +8,7 @@ from app.models.user import User, UserToken
 from app.schemas import db_schemas
 
 
-class UserCRUD(CRUDBase[User, db_schemas.UserDBCreate, db_schemas.UserDBUpdate]):
+class UserCRUD(CRUDBase[User, db_schemas.user.UserDBCreate, db_schemas.user.UserDBUpdate]):
 
     def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
 
@@ -16,7 +16,7 @@ class UserCRUD(CRUDBase[User, db_schemas.UserDBCreate, db_schemas.UserDBUpdate])
 
 
 class UserTokenCRUD(
-    CRUDBase[UserToken, db_schemas.UserTokenDBCreate, db_schemas.UserTokenDBUpdate]
+    CRUDBase[UserToken, db_schemas.user.UserTokenDBCreate, db_schemas.user.UserTokenDBUpdate]
 ):
 
     def get_user(self, db: Session, *, token_id: int, access_key: str, user_id: int) -> User:

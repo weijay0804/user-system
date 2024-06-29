@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app import security
 from app.config.settings import get_settings
-from app.crud import user_crud, user_token_crud
+from app.crud import crud_user
 from app.models.user import User
 from app.schemas import db_schemas, request_schemas, response_schemas
 from app.services import email_serv
@@ -16,11 +16,13 @@ settings = get_settings()
 
 
 async def activate_user_account(
-    data: request_schemas.UserVerifiyAccountReq, session: Session, backgroundtasks: BackgroundTasks
+    data: request_schemas.user.UserVerifiyAccountReq,
+    session: Session,
+    backgroundtasks: BackgroundTasks,
 ) -> None:
     """認證使用者帳號，並發送帳號已啟用 email 至使用者信箱"""
 
-    user = user_crud.get_by_email(session, email=data.email)
+    user = crud_user.user_crud.get_by_email(session, email=data.email)
 
     if not user:
         raise HTTPException(status_code=400, detail="This link is not valid.")
@@ -47,7 +49,7 @@ async def activate_user_account(
     await email_serv.send_account_verifiaction_confirmation_email(user, backgroundtasks)
 
 
-def _generate_token(user: User, session: Session) -> response_schemas.JWTokenResp:
+def _generate_token(user: User, session: Session) -> response_schemas.auth.JWTokenResp:
     """生成 JWT 並將 token 資料儲存至資料庫"""
 
     refresh_key = security.get_unique_string(100)
@@ -67,10 +69,12 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
     # 這邊採取更新原有的 token 而不是再建立一筆新的 token
     # 為了防止如果用戶重新登入，而舊的那個 access token 還可以繼續使用
     if user.token:
-        user_token = user_token_crud.update(session, db_obj=user.token, obj_in=user_token_in)
+        user_token = crud_user.user_token_crud.update(
+            session, db_obj=user.token, obj_in=user_token_in
+        )
 
     else:
-        user_token = user_token_crud.create(session, obj_in=user_token_in)
+        user_token = crud_user.user_token_crud.create(session, obj_in=user_token_in)
 
     # TODO 這邊改成用 BaseModel
     at_payload = {
@@ -98,14 +102,14 @@ def _generate_token(user: User, session: Session) -> response_schemas.JWTokenRes
         rt_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, rt_expires
     )
 
-    return response_schemas.JWTokenResp(
+    return response_schemas.auth.JWTokenResp(
         access_token=access_token, refresh_token=refresh_token, expires_at=at_expires.seconds
     )
 
 
 def get_login_token(
     data: OAuth2PasswordRequestForm, session: Session
-) -> response_schemas.JWTokenResp:
+) -> response_schemas.auth.JWTokenResp:
     """使用者登入，並回傳 JWT
 
     `data` 中的 `username` 等同於 `email`
@@ -113,7 +117,7 @@ def get_login_token(
     """
 
     # 這邊的 username 等同於 email
-    user = user_crud.get_by_email(session, email=data.username)
+    user = crud_user.user_crud.get_by_email(session, email=data.username)
 
     if not user or not security.verify_hashed_string(data.password, user.password):
         raise HTTPException(status_code=400, detail="Incorrect email or password.")
@@ -127,7 +131,7 @@ def get_login_token(
     return _generate_token(user, session)
 
 
-def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTokenResp:
+def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth.JWTokenResp:
     """使用 refresh token 取得新的 access token"""
 
     token_payload = security.get_token_payload(
@@ -144,7 +148,7 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTo
 
     user_id = security.str_decode(token_payload.get("sub"))
 
-    user = user_crud.get(session, id=user_id)
+    user = crud_user.user_crud.get(session, id=user_id)
 
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
@@ -170,11 +174,13 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.JWTo
 
 
 async def forgot_password(
-    data: request_schemas.UserForgotPasswordReq, session: Session, bakground_tasks: BackgroundTasks
+    data: request_schemas.user.UserForgotPasswordReq,
+    session: Session,
+    bakground_tasks: BackgroundTasks,
 ):
     """使用者忘記密碼的請求，會發送重新設定密碼的 email 至使用者信箱"""
 
-    user = user_crud.get_by_email(session, email=data.email)
+    user = crud_user.user_crud.get_by_email(session, email=data.email)
 
     if user is None:
         raise HTTPException(status_code=400, detail="Email is not exists.")
@@ -189,13 +195,13 @@ async def forgot_password(
 
 
 async def forgot_password_reset(
-    data: request_schemas.UserForgotPasswordResetReq,
+    data: request_schemas.user.UserForgotPasswordResetReq,
     background_tasks: BackgroundTasks,
     session: Session,
 ):
     """使用者重新設定密碼，這個函數是針對未登入的使用者，並會在重新設定密碼後發送密碼已經被重新設定的 email 至使用者信箱"""
 
-    user = user_crud.get_by_email(session, email=data.email)
+    user = crud_user.user_crud.get_by_email(session, email=data.email)
 
     if not user:
         raise HTTPException(status_code=400, detail="Email is not exists.")
@@ -222,6 +228,6 @@ async def forgot_password_reset(
         password=security.verify_hashed_string(data.new_password)
     )
 
-    user_crud.update(session, db_obj=user, obj_in=update_scheam)
+    crud_user.user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
     await email_serv.send_password_reset_email(user, background_tasks)

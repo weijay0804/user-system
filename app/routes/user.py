@@ -18,7 +18,7 @@ user_auth_router = APIRouter(
 
 @user_router.post("", status_code=status.HTTP_201_CREATED)
 async def register_user(
-    data: request_schemas.UserCreateAccountResp,
+    data: request_schemas.user.UserCreateAccountReq,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
 ):
@@ -31,7 +31,7 @@ async def register_user(
 
 @user_router.put("/password")
 async def reset_password(
-    data: request_schemas.UserResetPasswordReq,
+    data: request_schemas.user.UserResetPasswordReq,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -43,7 +43,7 @@ async def reset_password(
     return JSONResponse({"message": "Password has been reset."})
 
 
-@user_auth_router.get("/me", response_model=response_schemas.FetchUserResp)
+@user_auth_router.get("/me", response_model=response_schemas.user.FetchUserResp)
 def fetch_user(user: User = Depends(get_current_user)):
 
     return user

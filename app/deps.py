@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.config.database import SessionLocal
 from app.config.settings import get_settings
-from app.crud import user_token_crud
+from app.crud import crud_user
 from app.models.user import User
 from app.security import get_token_payload, str_decode
 
@@ -50,7 +50,7 @@ def get_token_user(token: str, session: Session) -> User:
         user_id = str_decode(payload["sub"])
         access_key = payload["a"]
 
-        user = user_token_crud.get_user(
+        user = crud_user.user_token_crud.get_user(
             session, token_id=user_token_id, access_key=access_key, user_id=user_id
         )
 
