@@ -250,3 +250,42 @@ async def forgot_password_reset(
     crud_user.user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
     await email_serv.send_password_reset_email(user, background_tasks)
+
+
+def user_logout(refresh_token: str, session: Session, user: User) -> None:
+    """登出使用者
+
+    並且如果傳入的 refresh token 沒有過期，則將其從資料庫中刪除。
+
+    並且會清理資料庫中屬於該 user 的過期 token 資料
+
+    """
+
+    token_payload = security.get_token_payload(
+        refresh_token, settings.JWT_SECRET, settings.JWT_ALGORITHM
+    )
+
+    if "error" in token_payload:
+
+        if token_payload["error"] == "token expired":
+            return None
+
+        if token_payload["error"] == "token invalid":
+            raise HTTPException(status_code=401, detail="Not authorised.")
+
+    payload_obj = utils_schemas.jwt.JWTPayload(**token_payload)
+
+    token_type = security.str_decode(payload_obj.p)
+
+    if token_type != "rt":
+        raise HTTPException(status_code=401, detail="Not authorised.")
+
+    token_key = payload_obj.t
+
+    user_token = crud_user.user_token_crud.get_by_key(session, token_key=token_key)
+
+    if not user_token:
+        raise HTTPException(status_code=401, detail="Not authorised.")
+
+    crud_user.user_token_crud.remove(session, id=user_token.id)
+    crud_user.user_token_crud.clear_up_expired_tokens(session, user_id=user.id)

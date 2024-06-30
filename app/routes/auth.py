@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.deps import get_session
+from app.deps import get_current_user, get_session
+from app.models.user import User
 from app.schemas import request_schemas, response_schemas
 from app.services import auth_serv
 
@@ -65,3 +66,16 @@ async def forgot_password_reset(
     await auth_serv.forgot_password_reset(data, background_tasks, session)
 
     return JSONResponse(content={"message": "Password has been reset."})
+
+
+@auth_router.get("/logout")
+def user_logout(
+    refresh_token=Header(),
+    session: Session = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    """登出使用者"""
+
+    auth_serv.user_logout(refresh_token, session, user)
+
+    return JSONResponse(content={"message": "You have been logged out."})
