@@ -24,7 +24,7 @@ async def create_user_account(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already exists.")
 
     hashed_pwd = security.hash_string(data.password)
-    obj_in = db_schemas.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
+    obj_in = db_schemas.user.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
 
     user = crud_user.user_crud.create(session, obj_in=obj_in)
 

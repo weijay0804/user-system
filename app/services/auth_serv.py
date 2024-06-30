@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Literal
 
 from fastapi import BackgroundTasks, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -49,62 +50,52 @@ async def activate_user_account(
     await email_serv.send_account_verifiaction_confirmation_email(user, backgroundtasks)
 
 
-def _generate_token(user: User, session: Session) -> response_schemas.auth.JWTokenResp:
-    """生成 JWT 並將 token 資料儲存至資料庫"""
+def _generate_token(
+    user: User, session: Session, purpose: Literal["at", "rt"]
+) -> response_schemas.auth.JWToken:
+    """生成 JWT 並將 token 資料儲存至資料庫
 
-    refresh_key = security.get_unique_string(100)
-    access_key = security.get_unique_string(50)
-    rt_expires = timedelta(minutes=settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES)
+    `purpose` 為 `at` 代表 `access token`，`rt` 代表 `refresh token`
 
-    user_token_in = db_schemas.UserTokenDBCreate(
-        user_id=user.id,
-        access_key=access_key,
-        refresh_key=refresh_key,
-        expires_at=datetime.now() + rt_expires,
-    )
+    只會將 `purpose` 為 `rt` 的 token 資料儲存至資料庫
 
-    # TODO 這邊要改成一對多的關係
-    # TODO 因為可能會有多個裝置使用的關係
-    # 讓 user 和 token 是一對一的關係
-    # 這邊採取更新原有的 token 而不是再建立一筆新的 token
-    # 為了防止如果用戶重新登入，而舊的那個 access token 還可以繼續使用
-    if user.token:
-        user_token = crud_user.user_token_crud.update(
-            session, db_obj=user.token, obj_in=user_token_in
+    """
+
+    if purpose == "at":
+        token_key = security.get_unique_string(50)
+        expires_min = settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+
+    elif purpose == "rt":
+        token_key = security.get_unique_string(100)
+        expires_min = settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES
+    else:
+        raise ValueError("Invalid token purpose.")
+
+    expires = timedelta(minutes=expires_min)
+    expires_at = datetime.now() + expires
+
+    if purpose == "rt":
+        user_token_in = db_schemas.user.UserTokenDBCreate(
+            user_id=user.id,
+            token_key=token_key,
+            expires_at=expires_at,
+            purpose=purpose,
         )
 
-    else:
-        user_token = crud_user.user_token_crud.create(session, obj_in=user_token_in)
+        crud_user.user_token_crud.create(session, obj_in=user_token_in)
 
     # TODO 這邊改成用 BaseModel
-    at_payload = {
+    token_payload = {
         "sub": security.str_encode(str(user.id)),
-        "a": access_key,
-        "r": security.str_encode(str(user_token.id)),
-        "n": security.str_encode(user.name),
-        "ty": security.str_encode("at"),
+        "t": token_key,
+        "p": security.str_encode(purpose),
     }
 
-    at_expires = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.generate_token(
-        at_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, expiry=at_expires
+    token = security.generate_token(
+        token_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, expires
     )
 
-    # TODO 這邊改成用 BaseModel
-    rt_payload = {
-        "sub": security.str_encode(str(user.id)),
-        "t": refresh_key,
-        "a": access_key,
-        "ty": security.str_encode("rt"),
-    }
-
-    refresh_token = security.generate_token(
-        rt_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, rt_expires
-    )
-
-    return response_schemas.auth.JWTokenResp(
-        access_token=access_token, refresh_token=refresh_token, expires_at=at_expires.seconds
-    )
+    return response_schemas.auth.JWToken(token=token, expires_at=expires_at)
 
 
 def get_login_token(
@@ -128,7 +119,10 @@ def get_login_token(
     if not user.verified_at:
         raise HTTPException(status_code=400, detail="Your account is not verified.")
 
-    return _generate_token(user, session)
+    at = _generate_token(user, session, purpose="at")
+    rt = _generate_token(user, session, purpose="rt")
+
+    return response_schemas.auth.JWTokenResp(access_token=at, refresh_token=rt)
 
 
 def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth.JWTokenResp:
