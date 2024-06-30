@@ -100,6 +100,8 @@ def get_login_token(
 
     並會將 refresh token 寫入資料庫
 
+    並會清理資料庫中屬於該 user 的過期的 refresh token 資料
+
     """
 
     # 這邊的 username 等同於 email
@@ -129,6 +131,8 @@ def get_login_token(
 
     at = _generate_token(at_payload)
     rt = _generate_token(rt_payload)
+
+    crud_user.user_token_crud.clear_up_expired_tokens(session, user_id=user.id)
 
     return response_schemas.auth.JWTokenResp(access_token=at, refresh_token=rt)
 
