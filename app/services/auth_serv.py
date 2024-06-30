@@ -49,14 +49,12 @@ async def activate_user_account(
     await email_serv.send_account_verifiaction_confirmation_email(user, backgroundtasks)
 
 
-def _generate_token(
-    user: User, session: Session, purpose: Literal["at", "rt"]
-) -> response_schemas.auth.JWToken:
-    """生成 JWT 並將 token 資料儲存至資料庫
+def _generate_token_payload(
+    user: User, purpose: Literal["at", "rt"]
+) -> utils_schemas.jwt.JWTPayload:
+    """生成 JWT payload
 
     `purpose` 為 `at` 代表 `access token`，`rt` 代表 `refresh token`
-
-    只會將 `purpose` 為 `rt` 的 token 資料儲存至資料庫
 
     """
 
@@ -73,27 +71,24 @@ def _generate_token(
     expires = timedelta(minutes=expires_min)
     expires_at = datetime.now(timezone.utc) + expires
 
-    if purpose == "rt":
-        user_token_in = db_schemas.user.UserTokenDBCreate(
-            user_id=user.id,
-            token_key=token_key,
-            expires_at=expires_at,
-            purpose=purpose,
-        )
-
-        crud_user.user_token_crud.create(session, obj_in=user_token_in)
-
     token_payload = utils_schemas.jwt.JWTPayload(
         sub=security.str_encode(str(user.id)),
         t=token_key,
         p=security.str_encode(purpose),
+        exp=expires_at,
     )
+
+    return token_payload
+
+
+def _generate_token(payload: utils_schemas.jwt.JWTPayload) -> response_schemas.auth.JWToken:
+    """產生 JWT token"""
 
     token = security.generate_token(
-        token_payload.model_dump(), settings.JWT_SECRET, settings.JWT_ALGORITHM, expires
+        payload.model_dump(), settings.JWT_SECRET, settings.JWT_ALGORITHM
     )
 
-    return response_schemas.auth.JWToken(token=token, expires_at=expires_at)
+    return response_schemas.auth.JWToken(token=token, expires_at=payload.exp)
 
 
 def get_login_token(
@@ -102,6 +97,8 @@ def get_login_token(
     """使用者登入，並回傳 JWT
 
     `data` 中的 `username` 等同於 `email`
+
+    並會將 refresh token 寫入資料庫
 
     """
 
@@ -117,14 +114,31 @@ def get_login_token(
     if not user.verified_at:
         raise HTTPException(status_code=400, detail="Your account is not verified.")
 
-    at = _generate_token(user, session, purpose="at")
-    rt = _generate_token(user, session, purpose="rt")
+    at_payload = _generate_token_payload(user, "at")
+    rt_payload = _generate_token_payload(user, "rt")
+
+    # 資料庫中只存 refresh token 資料
+    rt_token_in = db_schemas.user.UserTokenDBCreate(
+        user_id=user.id,
+        token_key=rt_payload.t,
+        expires_at=rt_payload.exp,
+        purpose="rt",
+    )
+
+    crud_user.user_token_crud.create(session, obj_in=rt_token_in)
+
+    at = _generate_token(at_payload)
+    rt = _generate_token(rt_payload)
 
     return response_schemas.auth.JWTokenResp(access_token=at, refresh_token=rt)
 
 
 def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth.JWTokenResp:
-    """使用 refresh token 取得新的 access token"""
+    """使用 refresh token 取得新的 access token 和 refresh token
+
+    如果 refresh token 有效，則會生成新的 access token 和 refresh token，並會將在資料庫中的 refresh token 更新，
+    並清理資料庫中屬於該 user 的過期的 refresh token 資料
+    """
 
     token_payload = security.get_token_payload(
         refresh_token, settings.JWT_SECRET, settings.JWT_ALGORITHM
@@ -133,41 +147,49 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth
     # NOTE 這邊可以再重構一下
     if "error" in token_payload:
         if token_payload["error"] == "token expired":
+
             raise HTTPException(status_code=401, detail="Token expired.")
 
         if token_payload["error"] == "token invalid":
             raise HTTPException(status_code=401, detail="Not authorised.")
 
-    token_type = security.str_decode(token_payload.get("ty"))
+    payload_obj = utils_schemas.jwt.JWTPayload(**token_payload)
+
+    token_type = security.str_decode(payload_obj.p)
 
     if token_type != "rt":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
 
-    user_id = security.str_decode(token_payload.get("sub"))
+    user_id = security.str_decode(payload_obj.sub)
 
     user = crud_user.user_crud.get(session, id=user_id)
 
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
 
-    user_token = user.token
+    token_key = payload_obj.t
+
+    user_token = crud_user.user_token_crud.get_by_key(session, token_key=token_key)
 
     if not user_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
 
-    # 這邊檢查傳入的 token type 是不是 `refresh token`
-    rt_key = token_payload.get("t")
-    at_key = token_payload.get("a")
+    at_patload = _generate_token_payload(user, "at")
+    rt_payload = _generate_token_payload(user, "rt")
 
-    if rt_key != user_token.refresh_key or at_key != user_token.access_key:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request.")
+    # 更新 token 資料，並清理過期的 token
+    rt_token_update_in = db_schemas.user.UserTokenDBUpdate(
+        token_key=rt_payload.t,
+        expires_at=rt_payload.exp,
+    )
 
-    is_expires = user_token.expires_at < datetime.now()
+    crud_user.user_token_crud.update(session, db_obj=user_token, obj_in=rt_token_update_in)
+    crud_user.user_token_crud.clear_up_expired_tokens(session, user_id=user.id)
 
-    if is_expires:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token has expired.")
+    at = _generate_token(at_patload)
+    rt = _generate_token(rt_payload)
 
-    return _generate_token(user, session)
+    return response_schemas.auth.JWTokenResp(access_token=at, refresh_token=rt)
 
 
 async def forgot_password(

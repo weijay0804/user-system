@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session, joinedload
@@ -37,6 +37,21 @@ class UserTokenCRUD(
             return None
 
         return user_token.user
+
+    def get_by_key(self, db: Session, *, token_key: str) -> Optional[UserToken]:
+
+        return db.query(self.model).filter(self.model.token_key == token_key).first()
+
+    def clear_up_expired_tokens(self, db: Session, *, user_id: int) -> None:
+        """清除過期的 token"""
+
+        # 為了能夠比對 datetime 的值，需把 timezone 設為 None
+        db.query(self.model).filter(
+            self.model.user_id == user_id,
+            self.model.expires_at < datetime.now(timezone.utc).replace(tzinfo=None),
+        ).delete()
+
+        db.commit()
 
 
 user_crud = UserCRUD(User)

@@ -79,5 +79,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         obj = db.get(self.model, id)
 
-        db.delete(obj)
-        db.commit()
+        if obj:
+            db.delete(obj)
+            db.commit()
