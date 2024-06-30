@@ -10,7 +10,7 @@ from app import security
 from app.config.settings import get_settings
 from app.crud import crud_user
 from app.models.user import User
-from app.schemas import db_schemas, request_schemas, response_schemas
+from app.schemas import db_schemas, request_schemas, response_schemas, utils_schemas
 from app.services import email_serv
 
 settings = get_settings()
@@ -83,15 +83,14 @@ def _generate_token(
 
         crud_user.user_token_crud.create(session, obj_in=user_token_in)
 
-    # TODO 這邊改成用 BaseModel
-    token_payload = {
-        "sub": security.str_encode(str(user.id)),
-        "t": token_key,
-        "p": security.str_encode(purpose),
-    }
+    token_payload = utils_schemas.jwt.JWTPayload(
+        sub=security.str_encode(str(user.id)),
+        t=token_key,
+        p=security.str_encode(purpose),
+    )
 
     token = security.generate_token(
-        token_payload, settings.JWT_SECRET, settings.JWT_ALGORITHM, expires
+        token_payload.model_dump(), settings.JWT_SECRET, settings.JWT_ALGORITHM, expires
     )
 
     return response_schemas.auth.JWToken(token=token, expires_at=expires_at)
@@ -131,8 +130,13 @@ def refresh_token(refresh_token: str, session: Session) -> response_schemas.auth
         refresh_token, settings.JWT_SECRET, settings.JWT_ALGORITHM
     )
 
-    if not token_payload:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
+    # NOTE 這邊可以再重構一下
+    if "error" in token_payload:
+        if token_payload["error"] == "token expired":
+            raise HTTPException(status_code=401, detail="Token expired.")
+
+        if token_payload["error"] == "token invalid":
+            raise HTTPException(status_code=401, detail="Not authorised.")
 
     token_type = security.str_decode(token_payload.get("ty"))
 

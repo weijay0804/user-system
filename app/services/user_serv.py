@@ -41,7 +41,7 @@ async def reset_password(
 ):
     """使用者重新設定密碼，這個函數是針對已經登入的使用者，並會在重新設定密碼後發送密碼已經被重新設定的 email 至使用者信箱"""
 
-    update_scheam = db_schemas.UserDBUpdate(password=security.hash_string(data.new_password))
+    update_scheam = db_schemas.user.UserDBUpdate(password=security.hash_string(data.new_password))
 
     crud_user.user_crud.update(session, db_obj=user, obj_in=update_scheam)
 
