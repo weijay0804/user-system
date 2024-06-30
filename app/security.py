@@ -1,10 +1,11 @@
 import base64
 import logging
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 import jwt
+from jwt.exceptions import ExpiredSignatureError
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -25,7 +26,7 @@ def verify_hashed_string(plain_string: str, hashed_string: str) -> bool:
 def generate_token(payload: dict, secret: dict, algo: dict, expiry: timedelta) -> str:
     """產生 JWT token"""
 
-    expiry = datetime.now() + expiry
+    expiry = datetime.now(timezone.utc) + expiry
 
     payload.update({"exp": expiry})
 
@@ -51,13 +52,35 @@ def str_decode(string: str) -> str:
 
 
 def get_token_payload(token: str, secret: str, alog: str) -> Dict[str, str]:
-    """取得 token 資訊"""
+    """取得 token 資訊
+
+    如果 token 有效，回傳 token 資訊，否則回傳錯誤訊息
+
+    錯誤訊息格式如下
+
+    - token 過期：
+    ```
+    {
+        "error": "token expired"
+    }
+    ```
+
+    - token 無效:
+    ```
+    {
+        "error": "token invalid"
+    }
+    ```
+    """
 
     try:
         payload = jwt.decode(token, secret, alog)
 
+    except ExpiredSignatureError:
+        payload = {"error": "token expired"}
+
     except Exception as jwt_exec:
         logging.debug(f"JWT Error: {str(jwt_exec)}")
-        payload = None
+        payload = {"error": "token invalid"}
 
     return payload

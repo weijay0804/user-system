@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import mapped_column, relationship
 
@@ -17,10 +15,10 @@ class User(Base):
     password = Column(String(128))
     is_active = Column(Boolean, default=False)
     verified_at = Column(DateTime, nullable=True, default=None)
-    updated_at = Column(DateTime, nullable=True, default=None, onupdate=datetime.now)
+    updated_at = Column(DateTime, nullable=True, default=None, onupdate=func.now())
     create_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    token = relationship("UserToken", back_populates="user", uselist=False)
+    tokens = relationship("UserToken", back_populates="user")
 
     def get_context_string(self, context: str) -> str:
         """取得根據 `context` 和用戶的密碼、時間資訊組合的字串"""
@@ -40,11 +38,11 @@ class UserToken(Base):
     __tablename__ = "user_tokens"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = mapped_column(ForeignKey("users.id"), unique=True)
-    access_key = Column(String(255), nullable=True, index=True, default=None)
-    refresh_key = Column(String(255), nullable=True, index=True, default=None)
+    user_id = mapped_column(ForeignKey("users.id"))
+    token_key = Column(String(255), nullable=True, index=True, default=None)
     create_at = Column(DateTime, nullable=False, server_default=func.now())
-    expires_at = Column(DateTime, nullable=False, comment="refrehs token expires time")
-    updated_at = Column(DateTime, nullable=True, default=None, onupdate=datetime.now())
+    expires_at = Column(DateTime, nullable=False, comment="token expires time")
+    is_revoked = Column(Boolean, default=False, index=True)
+    purpose = Column(String(20), nullable=False)
 
-    user = relationship("User", back_populates="token")
+    user = relationship("User", back_populates="tokens")

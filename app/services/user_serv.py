@@ -24,7 +24,7 @@ async def create_user_account(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already exists.")
 
     hashed_pwd = security.hash_string(data.password)
-    obj_in = db_schemas.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
+    obj_in = db_schemas.user.UserDBCreate(email=data.email, name=data.name, password=hashed_pwd)
 
     user = crud_user.user_crud.create(session, obj_in=obj_in)
 
@@ -41,7 +41,7 @@ async def reset_password(
 ):
     """使用者重新設定密碼，這個函數是針對已經登入的使用者，並會在重新設定密碼後發送密碼已經被重新設定的 email 至使用者信箱"""
 
-    update_scheam = db_schemas.UserDBUpdate(password=security.hash_string(data.new_password))
+    update_scheam = db_schemas.user.UserDBUpdate(password=security.hash_string(data.new_password))
 
     crud_user.user_crud.update(session, db_obj=user, obj_in=update_scheam)
 

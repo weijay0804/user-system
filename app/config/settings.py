@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     )
 
     # JWT config
-    JWT_SECRET: str = os.environ.get("JWT_SECRET", "hard to guess")
+    JWT_SECRET: str = os.environ.get(
+        "JWT_SECRET", "ae0359c0c2eb9ced85498375ef480cbd5b0eb30f0579c17443866b72f762b873"
+    )
     JWT_ALGORITHM: str = os.environ.get("JWT_ALGORITHM", "HS256")
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 3))
     JWT_REFRESH_TOKEN_EXPIRE_MINUTES: int = int(
