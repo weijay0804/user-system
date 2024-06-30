@@ -1,7 +1,7 @@
 import base64
 import logging
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 import jwt
@@ -25,7 +25,7 @@ def verify_hashed_string(plain_string: str, hashed_string: str) -> bool:
 def generate_token(payload: dict, secret: dict, algo: dict, expiry: timedelta) -> str:
     """產生 JWT token"""
 
-    expiry = datetime.now() + expiry
+    expiry = datetime.now(timezone.utc) + expiry
 
     payload.update({"exp": expiry})
 

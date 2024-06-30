@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import BackgroundTasks, HTTPException, status
@@ -41,8 +41,7 @@ async def activate_user_account(
         raise HTTPException(status_code=400, detail="This link is not valid.")
 
     user.is_active = True
-    user.updated_at = datetime.now()
-    user.verified_at = datetime.now()
+    user.verified_at = datetime.now(timezone.utc)
 
     session.add(user)
     session.commit()
@@ -72,7 +71,7 @@ def _generate_token(
         raise ValueError("Invalid token purpose.")
 
     expires = timedelta(minutes=expires_min)
-    expires_at = datetime.now() + expires
+    expires_at = datetime.now(timezone.utc) + expires
 
     if purpose == "rt":
         user_token_in = db_schemas.user.UserTokenDBCreate(
