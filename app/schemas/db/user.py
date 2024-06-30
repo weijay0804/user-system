@@ -35,4 +35,5 @@ class UserTokenDBCreate(BaseModel):
 class UserTokenDBUpdate(BaseModel):
     """更新使用者 token 資料"""
 
-    is_revoked: bool
+    token_key: str
+    expires_at: datetime

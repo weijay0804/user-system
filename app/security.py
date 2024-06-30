@@ -23,12 +23,8 @@ def verify_hashed_string(plain_string: str, hashed_string: str) -> bool:
     return pwd_context.verify(plain_string, hashed_string)
 
 
-def generate_token(payload: dict, secret: dict, algo: dict, expiry: timedelta) -> str:
+def generate_token(payload: dict, secret: dict, algo: dict) -> str:
     """產生 JWT token"""
-
-    expiry = datetime.now(timezone.utc) + expiry
-
-    payload.update({"exp": expiry})
 
     return jwt.encode(payload, secret, algorithm=algo)
 
