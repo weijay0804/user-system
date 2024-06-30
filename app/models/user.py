@@ -41,8 +41,7 @@ class UserToken(Base):
     user_id = mapped_column(ForeignKey("users.id"))
     token_key = Column(String(255), nullable=True, index=True, default=None)
     create_at = Column(DateTime, nullable=False, server_default=func.now())
-    expires_at = Column(DateTime, nullable=False, comment="token expires time")
-    is_revoked = Column(Boolean, default=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True, comment="token expires time")
     purpose = Column(String(20), nullable=False)
 
     user = relationship("User", back_populates="tokens")
