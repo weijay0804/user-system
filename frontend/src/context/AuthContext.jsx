@@ -1,3 +1,6 @@
+// 控制用戶登入、登出狀態
+// 通過 localStorage 儲存登入狀態
+
 import { createContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 

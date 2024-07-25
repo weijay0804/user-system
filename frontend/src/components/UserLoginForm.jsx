@@ -1,3 +1,5 @@
+// 用戶登入表單元件
+
 import { useState } from 'react';
 import {
     Button,
@@ -10,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatErrorMsg } from '../helper/responseHelper';
 import { authApi } from '../api/authApi';
 import FadeAlert from './FadeAlert';
+import authRouters from '../routes/auth';
 
 function UserLoginForm() {
 
@@ -64,7 +67,7 @@ function UserLoginForm() {
 
                 setTimeout(() => {
 
-                    navigate("/auth/verifiy/reminder");
+                    navigate(authRouters.accountVerifyReminderUrl);
                 }, 1500)
 
                 return

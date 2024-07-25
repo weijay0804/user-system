@@ -1,3 +1,6 @@
+// 提醒尚未驗證的用戶先驗證帳號
+// 如果沒有收到驗證信，用戶可以輸入電子郵件並在寄送一封
+
 import { useState, useEffect } from 'react';
 
 import {
@@ -11,6 +14,7 @@ import {
 import FadeAlert from '../components/FadeAlert';
 import { authApi } from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
+import authRouters from '../routes/auth';
 
 function VerifiedAccountReminderPage() {
 
@@ -49,7 +53,7 @@ function VerifiedAccountReminderPage() {
             showAlert()
 
             setTimeout(() => {
-                navigate("/auth")
+                navigate(authRouters.loginUrl)
             }, 2000)
         }).catch((error) => {
 
