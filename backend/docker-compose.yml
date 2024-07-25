@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+
+  mysql_db:
+
+    image: mysql:latest
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql/
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+
+    networks:
+      - app_network
+
+  smtp-service:
+    image: axllent/mailpit
+    restart: unless-stopped
+    container_name: smtp
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - app_network
+
+volumes:
+  mysql_data:
+
+networks:
+  app_network:
+    driver: bridge
