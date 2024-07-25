@@ -1,3 +1,6 @@
+// 驗證用戶的帳號
+// 是通過 email 的連結跳轉到這的
+
 import { useEffect, useState } from 'react';
 
 import {
@@ -8,6 +11,8 @@ import {
 
 import { authApi } from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
+
+import authRouters from '../routes/auth';
 
 function VerifiedAccountPage() {
 
@@ -34,7 +39,7 @@ function VerifiedAccountPage() {
 
                 setTimeout(() => {
 
-                    navigate("/auth")
+                    navigate(authRouters.loginUrl)
                 }, 2000)
 
             }, 1000)

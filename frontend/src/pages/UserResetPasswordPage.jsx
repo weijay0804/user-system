@@ -1,3 +1,6 @@
+// 用戶重新設定密碼
+// 這邊是用戶已經登入後，自己要手動更新密碼
+
 import { useState, useEffect } from 'react';
 
 import {

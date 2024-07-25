@@ -1,3 +1,6 @@
+// 用戶忘記密碼
+// 用戶會填寫 email，並會記一封重新設定密碼的 email
+
 import { useState } from 'react';
 import {
     Container,
@@ -9,6 +12,7 @@ import {
 import { authApi } from '../api/authApi';
 import FadeAlert from '../components/FadeAlert';
 import { useNavigate } from 'react-router-dom';
+import authRouters from '../routes/auth';
 
 function ForgetPasswordPage() {
 
@@ -38,7 +42,7 @@ function ForgetPasswordPage() {
             showAlert()
 
             setTimeout(() => {
-                navigate("/auth")
+                navigate(authRouters.loginUrl)
             }, 6000)
 
         }).catch((error) => {

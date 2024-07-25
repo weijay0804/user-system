@@ -1,3 +1,7 @@
+// 用戶重新設定密碼
+// 這邊是用戶沒有登入，忘記密碼
+// 是通過 email 跳轉到這
+
 import { useState, useEffect } from 'react';
 
 import {

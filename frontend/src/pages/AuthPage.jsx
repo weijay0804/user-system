@@ -1,3 +1,5 @@
+// 用戶登入、註冊、忘記密碼
+
 import { useState } from 'react';
 import {
     Container,
@@ -9,6 +11,7 @@ import UserLoginForm from '../components/UserLoginForm';
 import UserRegisetrForm from '../components/UserRegisterForm';
 import ReminderText from '../components/ReminderText';
 import { useNavigate } from 'react-router-dom';
+import authRouters from '../routes/auth';
 
 function AuthPage() {
 
@@ -22,7 +25,7 @@ function AuthPage() {
                 {isLoginOn ? <UserLoginForm /> : <UserRegisetrForm setIsRegistered={setIsRegistered} setIsLoginOn={setIsLoginOn} />}
                 <Grid container justifyContent="space-between" alignItems="center">
                     <Grid item justifyItems="flex-start">
-                        <Link href="#" variant="body2" onClick={() => navigate('/auth/forget')}>
+                        <Link href="#" variant="body2" onClick={() => navigate(authRouters.forgotPasswordUrl)}>
                             忘記密碼？
                         </Link>
                     </Grid>
